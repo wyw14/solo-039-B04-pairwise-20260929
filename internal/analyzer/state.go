@@ -57,10 +57,14 @@ func (s *State) Add(sample model.Sample) bool {
 func (s *State) Proof(revision uuid.UUID) (model.Proof, bool) {
 	s.mu.RLock()
 	online := s.online
-	complete := s.window.Complete()
-	calibration := s.calibration
+	w := s.window
 	s.mu.RUnlock()
-	if !online || !complete {
+	// The proof may only certify the generation the samples actually belong to.
+	// A feed switch or recalibration resets the window, so samples collected
+	// under an older generation can never back a proof labeled with a newer
+	// claimed revision.
+	calibration, feedRevision, complete := w.Generation()
+	if !online || !complete || feedRevision == uuid.Nil || revision != feedRevision {
 		return model.Proof{}, false
 	}
 	proof := model.Proof{ID: uuid.New(), Revision: revision, Source: calibration.String(), At: 1, Independent: true}

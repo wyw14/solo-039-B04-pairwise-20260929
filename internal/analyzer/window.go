@@ -63,6 +63,16 @@ func (w *Window) Identity() (uuid.UUID, uuid.UUID) {
 	return w.calibration, w.feedRevision
 }
 
+// Generation reports the calibration and feed revisions the window's samples
+// belong to, together with whether enough matching samples have been collected.
+// It is read under a single lock so a proof can never observe a half-reset
+// window.
+func (w *Window) Generation() (calibration, feedRevision uuid.UUID, complete bool) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	return w.calibration, w.feedRevision, len(w.samples) >= w.needed
+}
+
 func (w *Window) Complete() bool { w.mu.Lock(); defer w.mu.Unlock(); return len(w.samples) >= w.needed }
 
 func (w *Window) Samples() []model.Sample {

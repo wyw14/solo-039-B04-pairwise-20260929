@@ -123,7 +123,7 @@ func (p *Plant) Start(ctx context.Context, grade, source string) (model.Campaign
 		return model.Campaign{}, err
 	}
 	p.Column.SetFeedRevision(p.Feed.Current.Revision)
-	p.Analyzer.BindFeed(p.Feed.Current.Revision)
+	p.Analyzer.BindFeed(current.Revision)
 	p.Campaign.Advance(model.Warming)
 	if err := p.Reboiler.Ramp(ctx, p.Campaign.Snapshot(), 0.5); err != nil {
 		operationErr = err
@@ -159,7 +159,7 @@ func (p *Plant) Transition(ctx context.Context, grade, source string) (model.Cam
 	}
 	p.Column.SetFeedRevision(p.Feed.Current.Revision)
 	p.FeedMetrics.Record(source)
-	p.Analyzer.BindFeed(p.Feed.Current.Revision)
+	p.Analyzer.BindFeed(current.Revision)
 	if err := p.record("campaign.transition", grade); err != nil {
 		p.fail(err)
 		return model.Campaign{}, err
@@ -168,7 +168,7 @@ func (p *Plant) Transition(ctx context.Context, grade, source string) (model.Cam
 }
 
 func (p *Plant) AddSample(value float64, at int64) (int, error) {
-	revision := p.Feed.Current.Revision
+	revision := p.Campaign.Snapshot().Revision
 	calibration := p.Analyzer.Calibration()
 	ok := p.Analyzer.Add(model.Sample{ID: uuid.New(), FeedRevision: revision, Calibration: calibration, At: at, Component: "top", Value: value, Valid: true})
 	if !ok {
@@ -179,7 +179,7 @@ func (p *Plant) AddSample(value float64, at int64) (int, error) {
 
 func (p *Plant) CalibrateAnalyzer() uuid.UUID {
 	revision := p.Analyzer.Calibrate()
-	p.Analyzer.BindFeed(p.Feed.Current.Revision)
+	p.Analyzer.BindFeed(p.Campaign.Snapshot().Revision)
 	return revision
 }
 
