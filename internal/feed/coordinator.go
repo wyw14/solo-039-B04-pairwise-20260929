@@ -33,7 +33,7 @@ func (c *Coordinator) Switch(ctx context.Context, source string, campaign model.
 	}
 	c.Previous = old
 	c.Current = &Route{}
-	c.Current.Prepare(source)
+	c.Current.Prepare(source, campaign.Revision)
 	if err := c.Current.Activate(); err != nil {
 		return err
 	}

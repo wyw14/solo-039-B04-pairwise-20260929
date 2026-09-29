@@ -14,9 +14,9 @@ type Route struct {
 	Flow     float64
 }
 
-func (r *Route) Prepare(source string) {
+func (r *Route) Prepare(source string, revision uuid.UUID) {
 	r.Source = source
-	r.Revision = uuid.New()
+	r.Revision = revision
 	r.Open = false
 	r.Flow = 0
 }
